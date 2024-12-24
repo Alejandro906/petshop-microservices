@@ -44,3 +44,7 @@ kubectl get pods -n petshop
 
 # Si necesita reiniciar un pod específico
 kubectl delete pod [id del servicio] -n petshop
+```
+3. **Arquitectura de la Aplicación**
+
+![Arquitectura Microservicios](./images/drawio.png)
