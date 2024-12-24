@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5675:5672"
+      - "15675:15672" 
+    networks:
+      - petshop-network
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - petshop-network
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "7000:7000"
+    depends_on:
+      - mongodb
+    networks:
+      - petshop-network
+
+  user-service:
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/users
+      - JWT_SECRET=your_jwt_secret
+      - PORT=7001
+    depends_on:
+      - mongodb
+    networks:
+      - petshop-network
+
+  product-service:
+    build:
+      context: ./product
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - MONGO_URL=mongodb://mongodb:27017/products
+      - JWT_SECRET=your_jwt_secret
+      - PORT=7002
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - petshop-network
+
+  cart-service:
+    build:
+      context: ./cart
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - MONGO_URL=mongodb://mongodb:27017/carts
+      - JWT_SECRET=your_jwt_secret
+      - PORT=7003
+      - PRODUCT_SERVICE_URL=http://product-service:7002
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - petshop-network
+  
+  category-service:
+    build:
+      context: ./category
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - MONGO_URL=mongodb://mongodb:27017/categories
+      - JWT_SECRET=your_jwt_secret
+      - PORT=7004
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - petshop-network
+  
+  order-service:
+    build:
+      context: ./order
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - MONGO_URL=mongodb://mongodb:27017/orders
+      - JWT_SECRET=your_jwt_secret
+      - PORT=7005
+      - PRODUCT_SERVICE_URL=http://product-service:7002
+      - USER_SERVICE_URL=http://user-service:7001
+      - CART_SERVICE_URL=http://cart-service:7003
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - petshop-network
+  
+  search-service:
+    build:
+      context: ./search
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - JWT_SECRET=your_jwt_secret
+      - PORT=7006
+      - PRODUCT_SERVICE_URL=http://product-service:7002
+      - CATEGORY_SERVICE_URL=http://category-service:7004
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - petshop-network
+
+networks:
+  petshop-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

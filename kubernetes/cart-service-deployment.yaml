@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.34.0 (cbf2835db)
+  labels:
+    io.kompose.service: cart-service
+  name: cart-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: cart-service
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.34.0 (cbf2835db)
+      labels:
+        io.kompose.service: cart-service
+    spec:
+      containers:
+        - env:
+            - name: JWT_SECRET
+              value: your_jwt_secret
+            - name: MONGO_URL
+              value: mongodb://mongodb:27017/carts
+            - name: PORT
+              value: "7003"
+            - name: PRODUCT_SERVICE_URL
+              value: http://product-service:7002
+            - name: RABBITMQ_URL
+              value: amqp://rabbitmq:5672
+          image: cart-service
+          name: cart-service
+      restartPolicy: Always
